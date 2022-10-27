@@ -2,6 +2,7 @@
 #include "hb_orm.ch"
 #include "hb_vfp.ch"
 #include "dbinfo.ch"
+#include "hbcurl.ch"
 
 #define BUILDVERSION "2.32"
 

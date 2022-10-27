@@ -18,10 +18,14 @@ RUN apt-get install -y \
         libgpm2 \
         gnupg \
         wget \
-        psmisc
+        psmisc \
+        libcurl4-openssl-dev \
+	libssl-dev
 
 
-# install harbour from src
+# install harbour from src including curl libs
+ENV HB_WITH_CURL=/usr/include/x86_64-linux-gnu/
+ENV HB_WITH_OPENSSL=/usr/include/openssl/
 RUN git clone --depth=10 https://github.com/harbour/core.git hb32
 WORKDIR /hb32
 RUN make -j 8 install
