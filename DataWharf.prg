@@ -712,7 +712,6 @@ else
 
         if !empty(l_cSessionID) .and. !VFP_Inlist(lower(l_cPageName),"api")
             if ::isOAuth()
-                altd()
                 //validate session JWT
                 l_oJWT := JWT():new()
                 l_oJWT:Decode(l_cSessionID)
@@ -721,7 +720,7 @@ else
                 endif
 
                 //check if token is still valid:
-                if getLinuxEpochTime() - l_oJWT:GetExpration() < 0
+                if getLinuxEpochTime() - l_oJWT:GetExpration() < 0 .and. ValidateToken(l_oJWT)
                     l_lLoggedIn := .t.
                     l_cUserId := l_oJWT:GetPayloadData('preferred_username')
                     l_cUserName := AllTrim(l_oJWT:GetPayloadData('given_name'))+" "+l_oJWT:GetPayloadData('family_name')
@@ -1023,11 +1022,12 @@ local l_cErrorInfo
     
     BREAK
 return nil
+//=================================================================================================================
 
 method isOAuth()
 return oFcgi:GetAppConfig("AUTH_METHOD") = "oauth"
 
-
+//=================================================================================================================
 method OnCallback(p_code)
     local l_tokenURL := ::GetAppConfig("OAUTH_TOKEN_URL")
     local l_aHeaderParameter := {}
@@ -1038,7 +1038,7 @@ method OnCallback(p_code)
     local l_oAPIReturn
     local l_oToken
 
-    local oJWT
+    local l_oJWT
 
     /*
     We want to do this:
@@ -1063,20 +1063,28 @@ method OnCallback(p_code)
 
 
     // Object
-    oJWT := JWT():new()
-    //oJWT:SetSecret("wAv5nz7JtUkjixHC3Qh8W1rha3JrdViEmoMxu0s1ePoQgV_DZLtcehAT_SfqjKQLLxF3_MRd7PeUz8SrlW32xbs7iGvwPJekSvEA_BP0oQ_zdEDfJRofSUe9yBSR_4Tarnxb8LADNih5iy-8zFrldbBUWgeQoe5_5sgxwibmI-AxJ6Uq6YkpSquGN7a6niH1MB-iUCW1Bd9rS5hBoAxBgE1cwAdHQwpSSklYjeSRHLTTzwrHroZDb-P9v_TdgQTNDnf_JAGeOzw1-wSnOWV_t5vCgD5QywxdSieWItGmuRIdQAcpK7S6YsCrJyHp6qzBQ7KGtpHN6f7rdRmS6nCz5w")
+    l_oJWT := JWT():new()
+    
     //Verify will not yet work as RS256 is currently not supported
     //oJWT:Verify(l_oToken)
-    oJWT:Decode(l_oToken)
-    if !empty(oJWT:GetError())
-        ::OnError(oJWT:GetError())
+    l_oJWT:Decode(l_oToken)
+    if !empty(l_oJWT:GetError())
+        ::OnError(l_oJWT:GetError())
     else
         //succcesfull login
         ::SetSessionCookieValue("SessionJWT",l_oToken,0)
     endif
     ::Redirect(::RequestSettings["SitePath"]+"home")
 return nil
+
 //=================================================================================================================
+function ValidateToken(l_oJWT)
+    local l_bIsValid := .t.
+    //oJWT:SetSecret(publicKey)
+    //Verify will not yet work as RS256 is currently not supported in JWT.prg
+    //needs support for RSA verification which is not yet implemented in hbSSL library.
+    //oJWT:Verify(l_oToken)
+return l_bIsValid
 
 //=================================================================================================================
 function UpdateSchema(par_o_SQLConnection)
